@@ -46,18 +46,17 @@ public class Main {
 
         //
         log.info("获取解析自定义参数----------------------");
-        JSONObject input = JSONUtil.parseObj(args[0]);
-        //"{\"appId\":\"sea\",\"appName\":\"default\",\"version\":\"2.6.3-SNAPSHOT\",\"port\":\"default\",\"threadNum\":\"default\",\"serveiceVersion\":\"default\",\"timeout\":\"default\",\"lang\":2,\"phpUrl\":\"default\",\"userNames\":\"default\"}"
+        JSONObject input = JSONUtil.parseObj("{\"appId\":\"captcha\",\"appName\":\"default\",\"version\":\"default\",\"port\":\"default\",\"threadNum\":\"default\",\"serveiceVersion\":\"default\",\"timeout\":\"default\",\"lang\":1,\"phpUrl\":\"default\",\"userNames\":\"default\"}");
         String inf = "";
         //PHP应用
-        if (input.get("lang").equals(1)) {
+        if ((input.get("lang")).equals(1)) {
             //描述接口文件上传并获取对应文件识别码
             log.info("描述接口文件上传并获取对应文件识别码---------------------");
             HttpRequest request = HttpUtil.createPost("http://10.5.121.174/shtml/project/doUpload");
             request.contentType("multipart/form-data");
             request.disableCache();
             request.cookie("JSESSIONID=" + sessionId);
-            File file = new File("api/" + input.get("appId"));
+            File file = new File("/");
             for (File file1 : file.listFiles()) {
                 if (file1.getName().endsWith("json.txt")){
                     request.form("file",file1);
@@ -81,22 +80,29 @@ public class Main {
         if (updateData == null) {
             //执行创建应用
             log.info("开始创建usap服务---------------------" + input.get("appId"));
-            deployMap.put("id", input.get("id"));
+            deployMap.put("appId", input.get("appId"));
             deployMap.put("appName", input.get("appName"));
             deployMap.put("groupId", "com.cyou.fz.services");
             deployMap.put("artifactId", input.get("artifactId"));
             deployMap.put("version", input.get("version"));
-            deployMap.put("pkg", "com.cyou.fz.services." + input.get("artifactId"));
+            deployMap.put("pkg", input.get("pkg"));
             deployMap.put("port", input.get("port"));
             deployMap.put("threadNum", input.get("threadNum"));
             deployMap.put("serveiceVersion", input.get("serveiceVersion"));
             deployMap.put("timeout", input.get("timeout"));
+            deployMap.put("lang", input.get("lang"));
             deployMap.put("phpUrl", input.get("phpUrl"));
             deployMap.put("inf", inf);
             deployMap.put("userNames", input.get("userNames"));
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
+            HttpRequest updateRequest = HttpUtil.createPost("http://10.5.121.174/shtml/project/saveProject");
+            updateRequest.disableCache();
+            updateRequest.form(deployMap);
+            updateRequest.cookie("JSESSIONID=" + sessionId);
+            HttpResponse updateResult = updateRequest.execute();
+            log.info("" + JSONUtil.parseObj(updateResult.body()));
         }else {
             log.info("开始更新usap服务---------------------" + input.get("appId"));
             deployMap.put("id", updateData.get("id"));
@@ -112,25 +118,26 @@ public class Main {
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
+            HttpRequest updateRequest = HttpUtil.createPost("http://10.5.121.174/shtml/project/upgradeProject");
+            updateRequest.disableCache();
+            updateRequest.form(deployMap);
+            updateRequest.cookie("JSESSIONID=" + sessionId);
+            HttpResponse updateResult = updateRequest.execute();
+            log.info("" + JSONUtil.parseObj(updateResult.body()));
         }
 
-        HttpRequest updateRequest = HttpUtil.createPost("http://10.5.121.174/shtml/project/upgradeProject");
-        updateRequest.disableCache();
-        updateRequest.form(deployMap);
-        updateRequest.cookie("JSESSIONID=" + sessionId);
-        HttpResponse updateResult = updateRequest.execute();
-        log.info("" + JSONUtil.parseObj(updateResult.body()));
+
     }
 
     public static Map<String, Object> SetmvnUrl(Map<String, Object> updateData, Map<String, Object> input, Map<String, Object> deployMap) {
         //maven仓库
         String r;
         //groupId
-        String g = updateData.get("groupId").toString();
+        String g = (updateData == null ? input : updateData).get("groupId").toString();
         //artifactId
-        String a = updateData.get("artifactId").toString();
+        String a = (updateData == null ? input : updateData).get("artifactId").toString();
         //version
-        String v = input.get("version").toString();
+        String v = input.get("version").toString().equals("default")?updateData.get("version").toString():input.get("version").toString();
         if (v.toLowerCase().endsWith("snapshot")) {
             r = "snapshots";
         }else {
