@@ -31,40 +31,33 @@ public class Main {
      *
      */
     public static void main(String[] args) {
-        //模拟登录获取sessionId
-        log.info("模拟登录获取sessionId---------------------");
-        Map loginMap =  new HashMap<String, Object>();
-        loginMap.put("userName", "admin");
-        loginMap.put("password","111111");
-        HttpRequest loginRequest = HttpUtil.createPost("http://10.5.121.174/login2");
-        loginRequest.form(loginMap);
-        HttpResponse loginResponse = loginRequest.execute();
-        JSONObject jsonObject = JSONUtil.parseObj(loginResponse.body());
-        Map map = (Map)jsonObject.get("datas");
-        String sessionId = (String) map.get("sessionId");
 
-
-        //
+        String sessionId = getSessionId();
         log.info("获取解析自定义参数----------------------");
-        JSONObject input = JSONUtil.parseObj("{\"appId\":\"captcha\",\"appName\":\"default\",\"version\":\"default\",\"port\":\"default\",\"threadNum\":\"default\",\"serveiceVersion\":\"default\",\"timeout\":\"default\",\"lang\":1,\"phpUrl\":\"default\",\"userNames\":\"default\"}");
+        JSONObject input = JSONUtil.parseObj(args[0]);
         String inf = "";
         //PHP应用
         if ((input.get("lang")).equals(1)) {
             //描述接口文件上传并获取对应文件识别码
             log.info("描述接口文件上传并获取对应文件识别码---------------------");
-            HttpRequest request = HttpUtil.createPost("http://10.5.121.174/shtml/project/doUpload");
+            HttpRequest request = HttpUtil.createPost(Constants.URL_PRE + "shtml/project/doUpload");
             request.contentType("multipart/form-data");
             request.disableCache();
             request.cookie("JSESSIONID=" + sessionId);
             File file = new File("/");
+            log.info("主目录为：{}",file.getAbsolutePath());
             for (File file1 : file.listFiles()) {
                 if (file1.getName().endsWith("json.txt")){
                     request.form("file",file1);
                     log.info("接口描述文件目录为：" + file1.getAbsolutePath());
+                    break;
                 }
             }
             JSONObject uploadMsg = JSONUtil.parseObj(request.execute().body());
             inf = (String) uploadMsg.get("msg");
+            while ("用户未登入，请重新登入".equals(inf)) {
+                inf = (String) JSONUtil.parseObj(request.cookie("JSESSIONID=" + getSessionId()).execute().body()).get("msg");
+            }
         }
 
 
@@ -97,9 +90,10 @@ public class Main {
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
-            HttpRequest updateRequest = HttpUtil.createPost("http://10.5.121.174/shtml/project/saveProject");
+            HttpRequest updateRequest = HttpUtil.createPost(Constants.URL_PRE + "shtml/project/saveProject");
             updateRequest.disableCache();
             updateRequest.form(deployMap);
+            log.info("创建信息为：{}",deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
             HttpResponse updateResult = updateRequest.execute();
             log.info("" + JSONUtil.parseObj(updateResult.body()));
@@ -118,10 +112,11 @@ public class Main {
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
-            HttpRequest updateRequest = HttpUtil.createPost("http://10.5.121.174/shtml/project/upgradeProject");
+            HttpRequest updateRequest = HttpUtil.createPost(Constants.URL_PRE + "shtml/project/upgradeProject");
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
+            log.info("更新信息为：{}",deployMap);
             HttpResponse updateResult = updateRequest.execute();
             log.info("" + JSONUtil.parseObj(updateResult.body()));
         }
@@ -129,6 +124,13 @@ public class Main {
 
     }
 
+    /**
+     * 用于获取maven仓库的url地址并填入发布信息
+     * @param updateData
+     * @param input
+     * @param deployMap
+     * @return
+     */
     public static Map<String, Object> SetmvnUrl(Map<String, Object> updateData, Map<String, Object> input, Map<String, Object> deployMap) {
         //maven仓库
         String r;
@@ -161,5 +163,24 @@ public class Main {
         deployMap.put("mavenJavaSourceUrl", jarSourceDeployUrl);
         deployMap.put("mavenJavaDocUrl", jarDocDeployUrl);
         return deployMap;
+    }
+
+
+    /**
+     * 模拟登录获取sessionId
+     * @return
+     */
+    public static String getSessionId() {
+        log.info("模拟登录获取sessionId---------------------");
+        Map loginMap =  new HashMap<String, Object>();
+        loginMap.put("userName", "admin");
+        loginMap.put("password","111111");
+        HttpRequest loginRequest = HttpUtil.createPost(Constants.URL_PRE + "login2");
+        loginRequest.form(loginMap);
+        HttpResponse loginResponse = loginRequest.execute();
+        JSONObject jsonObject = JSONUtil.parseObj(loginResponse.body());
+        Map map = (Map)jsonObject.get("datas");
+        String sessionId = (String) map.get("sessionId");
+        return sessionId;
     }
 }
