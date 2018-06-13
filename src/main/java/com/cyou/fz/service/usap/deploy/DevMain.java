@@ -8,7 +8,6 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import cn.hutool.log.StaticLog;
 import org.w3c.dom.Document;
 
 import java.io.File;
@@ -18,23 +17,26 @@ import java.util.Map;
 /**
  * @author created by BangZhuLi
  * @date 2018/2/1  14:26
- * usap自动化部署（php）,
+ * usap自动化部署（开发环境）,
  */
 
-public class Main {
+public class DevMain {
 
-    private static final Log log = LogFactory.get(Main.class);
+    private static final Log log = LogFactory.get(DevMain.class);
 
     /**
      *
      * @param args
      *
      */
-    public static void main(String[] args) {
-
-        String sessionId = getSessionId();
+    public static void main(String[] args) throws Exception {
         log.info("获取解析自定义参数----------------------");
         JSONObject input = JSONUtil.parseObj(args[0]);
+        if (input.get("url_pre") != null) {
+            Constants.URL_PRE = "http://" + (String) input.get("url_pre") + "/";
+        }
+        String sessionId = getSessionId();
+
         String inf = "";
         //PHP应用
         if ((input.get("lang")).equals(1)) {
@@ -44,7 +46,7 @@ public class Main {
             request.contentType("multipart/form-data");
             request.disableCache();
             request.cookie("JSESSIONID=" + sessionId);
-            File file = new File("/");
+            File file = new File("./");
             log.info("主目录为：{}",file.getAbsolutePath());
             for (File file1 : file.listFiles()) {
                 if (file1.getName().endsWith("json.txt")){
@@ -96,7 +98,11 @@ public class Main {
             log.info("创建信息为：{}",deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
             HttpResponse updateResult = updateRequest.execute();
-            log.info("" + JSONUtil.parseObj(updateResult.body()));
+            JSONObject rs = JSONUtil.parseObj(updateResult.body());
+            while ("未登录".equals(rs.get("msg"))) {
+                rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + getSessionId()).execute().body());
+            }
+            log.info(rs.toString());
         }else {
             log.info("开始更新usap服务---------------------" + input.get("appId"));
             deployMap.put("id", updateData.get("id"));
@@ -118,7 +124,14 @@ public class Main {
             updateRequest.cookie("JSESSIONID=" + sessionId);
             log.info("更新信息为：{}",deployMap);
             HttpResponse updateResult = updateRequest.execute();
-            log.info("" + JSONUtil.parseObj(updateResult.body()));
+            JSONObject rs = JSONUtil.parseObj(updateResult.body());
+            while ("未登录".equals(rs.get("msg"))) {
+                rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + getSessionId()).execute().body());
+            }
+            if (!"成功".equals(rs.get("msg"))) {
+                throw new Exception((String) rs.get("msg"));
+            }
+            log.info(rs.toString());
         }
 
 
@@ -145,7 +158,7 @@ public class Main {
         }else {
             r = "releases";
         }
-        HttpRequest mavenUrlReq = HttpUtil.createGet("http://mvnrepos.dev.17173.com:8081/nexus/service/local/artifact/maven/resolve?r=" + r +
+        HttpRequest mavenUrlReq = HttpUtil.createGet("http://10.5.117.126:8081/nexus/service/local/artifact/maven/resolve?r=" + r +
                 "&g=" + g +
                 "&a=" + a +
                 "&v=" + v);
@@ -156,9 +169,9 @@ public class Main {
         String mavenUrl = document.getElementsByTagName("repositoryPath").item(0).getTextContent();
         mavenUrl = mavenUrl.substring(0,mavenUrl.length()-4);
         //最后所需要填入soa进行发布的maven地址
-        String jarDeployUrl = "http://mvnrepos.dev.17173.com:8081/nexus/content/repositories/" + r  +  mavenUrl + ".jar";
-        String jarSourceDeployUrl = "http://mvnrepos.dev.17173.com:8081/nexus/content/repositories/" + r  +  mavenUrl + "-sources.jar";
-        String jarDocDeployUrl = "http://mvnrepos.dev.17173.com:8081/nexus/content/repositories/" + r  +  mavenUrl + "-javadoc.jar";
+        String jarDeployUrl = "http://10.5.117.126:8081/nexus/content/repositories/" + r  +  mavenUrl + ".jar";
+        String jarSourceDeployUrl = "http://10.5.117.126:8081/nexus/content/repositories/" + r  +  mavenUrl + "-sources.jar";
+        String jarDocDeployUrl = "http://10.5.117.126:8081/nexus/content/repositories/" + r  +  mavenUrl + "-javadoc.jar";
         deployMap.put("mavenJarUrl", jarDeployUrl);
         deployMap.put("mavenJavaSourceUrl", jarSourceDeployUrl);
         deployMap.put("mavenJavaDocUrl", jarDocDeployUrl);
@@ -174,7 +187,7 @@ public class Main {
         log.info("模拟登录获取sessionId---------------------");
         Map loginMap =  new HashMap<String, Object>();
         loginMap.put("userName", "admin");
-        loginMap.put("password","111111");
+        loginMap.put("password","soa@173");
         HttpRequest loginRequest = HttpUtil.createPost(Constants.URL_PRE + "login2");
         loginRequest.form(loginMap);
         HttpResponse loginResponse = loginRequest.execute();

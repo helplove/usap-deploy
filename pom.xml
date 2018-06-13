@@ -32,7 +32,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.cyou.fz.service.usap.deploy.Main</mainClass>
+                                    <mainClass>com.cyou.fz.service.usap.deploy.DevMain</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
