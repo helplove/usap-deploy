@@ -1,5 +1,6 @@
 package com.cyou.fz.service.usap.deploy;
 
+
 import cn.hutool.core.util.XmlUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -8,8 +9,6 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-
-
 import org.w3c.dom.Document;
 
 
@@ -19,13 +18,11 @@ import java.util.Map;
 
 /**
  * @author created by BangZhuLi
- * @date 2018/2/1  14:26
- * usap自动化部署（开发环境）,
+ * @date 2018/6/13
+ * usap自动化部署（测试，线上环境）,
  */
-
-public class DevMain {
-
-    private static final Log log = LogFactory.get(DevMain.class);
+public class TestMain {
+    private static final Log log = LogFactory.get(TestMain.class);
 
     /**
      *
@@ -37,12 +34,19 @@ public class DevMain {
         JSONObject input = JSONUtil.parseObj(args[0]);
         String sessionId = getSessionId();
 
+
+        /**
+         *
+         * 整合SOA系统发布流程的1.5.6步骤既可
+        **/
+
         String inf = "";
         //PHP应用
+        //当处于测试线上环境时不需要进行描述文件打成JAR包上传
         if ((input.get("lang")).equals(1)) {
             //描述接口文件上传并获取对应文件识别码
             log.info("描述接口文件上传并获取对应文件识别码---------------------");
-            HttpRequest request = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/doUpload");
+            HttpRequest request = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/doUpload");
             request.contentType("multipart/form-data");
             request.cookie("JSESSIONID=" + sessionId);
             File file = new File("./");
@@ -69,7 +73,7 @@ public class DevMain {
         //log.info("开始进行服务usap服务发布请求---------------------");
 
         //原先参数
-        JSONObject updateData = Update.getProjectByAppId(""+ input.get("appId"),sessionId, Constants.getDevUrlPre());
+        JSONObject updateData = Update.getProjectByAppId(""+ input.get("appId"),sessionId, Constants.getTestUrlPre());
         //需要发布的参数
         Map<String, Object> deployMap = new HashMap<String, Object>();
         if (updateData == null) {
@@ -89,10 +93,11 @@ public class DevMain {
             deployMap.put("phpUrl", input.get("phpUrl"));
             deployMap.put("inf", inf);
             deployMap.put("userNames", input.get("userNames"));
+            deployMap.put("deployWithoutJar", input.get("deployWithoutJar")==null?"N":"Y");
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
-            HttpRequest updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/saveProject");
+            HttpRequest updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/saveProject");
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             log.info("创建信息为：{}",deployMap);
@@ -116,6 +121,7 @@ public class DevMain {
             deployMap.put("phpUrl", input.get("phpUrl").equals("default")?updateData.get("phpUrl"):input.get("phpUrl"));
             deployMap.put("inf", inf);
             deployMap.put("userNames", input.get("userNames").equals("default")?updateData.get("userNames"):input.get("userNames"));
+            deployMap.put("deployWithoutJar", input.get("deployWithoutJar")==null?"N":"Y");
             if (input.get("lang").equals(2)) {
                 deployMap = SetmvnUrl(updateData, input, deployMap);
             }
@@ -134,7 +140,7 @@ public class DevMain {
             }else {
                 deployMap.put("pkg", updateData.get("pkg"));
             }
-            HttpRequest updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
+            HttpRequest updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/upgradeProject");
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
@@ -146,10 +152,10 @@ public class DevMain {
                 rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
             }
             if (!"成功".equals(rs.get("msg"))) {
-                throw new Exception((String) rs.get("msg"));
+                throw new Exception(rs.toString());
             }
             log.info(rs.toString());
-        }
+}
 
 
     }
@@ -205,7 +211,7 @@ public class DevMain {
         Map loginMap =  new HashMap<String, Object>();
         loginMap.put("userName", "admin");
         loginMap.put("password","111111");//线上密码soa@173,测试开发111111
-        HttpRequest loginRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "login2");
+        HttpRequest loginRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "login2");
         loginRequest.form(loginMap);
         loginRequest = loginRequest.enableDefaultCookie();
         HttpResponse loginResponse = loginRequest.execute();
@@ -214,5 +220,6 @@ public class DevMain {
         String sessionId = (String) map.get("sessionId");
         return sessionId;
     }
+
 
 }

@@ -15,16 +15,15 @@ import cn.hutool.log.LogFactory;
  */
 public class Update {
 
-    private static final Log log = LogFactory.get(DevMain.class);
+    private static final Log log = LogFactory.get(Update.class);
 
     public static void main(String[] args) {
-        JSONObject object = getProjectByAppId("newgame");
-        System.out.println(object);
+        //JSONObject object = getProjectByAppId("newgame");
+        //System.out.println(object);
     }
 
-    public static JSONObject getProjectByAppId(String appId) {
-        String sessionId = DevMain.getSessionId();
-        HttpRequest request = HttpUtil.createPost(Constants.URL_PRE + "shtml/project/loadProjects");
+    public static JSONObject getProjectByAppId(String appId, String sessionId, String urlPre) {
+        HttpRequest request = HttpUtil.createPost(urlPre + "shtml/project/loadProjects");
         request.cookie("JSESSIONID=" + sessionId);
         request.contentType("json");
         request.disableCache();
@@ -32,8 +31,11 @@ public class Update {
         String body = response.body();
         JSONObject appProject = JSONUtil.parseObj(body);
 
-        //System.out.println(appProject);
+        //log.info("从SOA系统获取到的appProject信息为" + appProject.toString());
         JSONArray array = (JSONArray) appProject.get("datas");
+        if (array == null) {
+            return null;
+        }
         for (JSONObject object : array.toList(JSONObject.class)) {
             if (object.get("appId").equals(appId)) {
                 return object;
