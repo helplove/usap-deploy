@@ -36,11 +36,11 @@ public class Utils {
             //maven仓库
             String r;
             //groupId
-            String g = (updateData == null ? deployMap : updateData).get("groupId").toString();
+            String g = deployMap.get("groupId").toString();
             //artifactId
-            String a = (updateData == null ? deployMap : updateData).get("artifactId").toString();
+            String a = deployMap.get("artifactId").toString();
             //version
-            String v = input.get("version").toString().equals("default")?updateData.get("version").toString():input.get("version").toString();
+            String v = deployMap.get("version").toString();
             if (v.toLowerCase().endsWith("snapshot")) {
                 r = "snapshots";
             }else {
@@ -224,9 +224,6 @@ public class Utils {
             deployMap.put("phpUrl", input.get("phpUrl").equals("default")?updateData.get("phpUrl"):input.get("phpUrl"));
             deployMap.put("inf", inf);
             deployMap.put("userNames", input.get("userNames").equals("default")?updateData.get("userNames"):input.get("userNames"));
-            if (input.get("lang").equals(2)) {
-                deployMap = Utils.SetmvnUrl(updateData, input, deployMap);
-            }
             if (input.get("artifactId") != null) {
                 deployMap.put("artifactId", input.get("artifactId"));
             }else {
@@ -241,6 +238,9 @@ public class Utils {
                 deployMap.put("pkg", input.get("pkg"));
             }else {
                 deployMap.put("pkg", updateData.get("pkg"));
+            }
+            if (input.get("lang").equals(2)) {
+                deployMap = Utils.SetmvnUrl(updateData, input, deployMap);
             }
             HttpRequest updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
             updateRequest.disableCache();
