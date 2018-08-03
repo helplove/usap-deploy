@@ -177,7 +177,6 @@ public class Utils {
         Map<String, Object> deployMap = new HashMap<String, Object>();
         if (updateData == null) {
             //执行创建应用
-            log.info("开始创建usap服务********************************" + input.get("appId"));
             deployMap.put("appId", input.get("appId"));
             deployMap.put("appName", input.get("appName"));
             deployMap.put("groupId", input.get("groupId")!=null?input.get("groupId"):"com.cyou.fz.services");
@@ -199,6 +198,7 @@ public class Utils {
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             log.info("创建信息为：{}",deployMap);
+            log.info("开始创建usap服务********************************" + input.get("appId"));
             updateRequest.cookie("JSESSIONID=" + sessionId);
             HttpResponse updateResult = updateRequest.execute();
             JSONObject rs = JSONUtil.parseObj(updateResult.body());
@@ -214,7 +214,6 @@ public class Utils {
             }
             log.info(rs.toString());
         }else {
-            log.info("开始更新usap服务********************************" + input.get("appId"));
             deployMap.put("id", updateData.get("id"));
             deployMap.put("appName", input.get("appName").equals("default")?updateData.get("appName"):input.get("appName"));
             deployMap.put("version", input.get("version").equals("default")?updateData.get("version"):input.get("version"));
@@ -248,6 +247,7 @@ public class Utils {
             updateRequest.form(deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
             log.info("更新信息为：{}",deployMap);
+            log.info("开始更新usap服务********************************" + input.get("appId"));
             HttpResponse updateResult = updateRequest.execute();
             JSONObject rs = JSONUtil.parseObj(updateResult.body());
             while ("未登录".equals(rs.get("msg"))) {

@@ -30,7 +30,7 @@ public class TestMain {
      *
      */
     public static void main(String[] args) throws Exception {
-        log.info("获取解析自定义参数----------------------");
+        log.info("获取解析自定义参数******************************");
         JSONObject input = JSONUtil.parseObj(args[0]);
         String sessionId = getSessionId();
 
@@ -56,7 +56,7 @@ public class TestMain {
      * @return
      */
     public static String getSessionId() {
-        log.info("模拟登录获取sessionId---------------------");
+        log.info("模拟登录获取sessionId******************************");
         Map loginMap =  new HashMap<String, Object>();
         loginMap.put("userName", "admin");
         loginMap.put("password","111111");//线上密码soa@173,测试开发111111

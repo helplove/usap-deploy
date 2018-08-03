@@ -24,7 +24,7 @@ public class ProMain {
      *
      */
     public static void main(String[] args) throws Exception {
-        log.info("获取解析自定义参数----------------------");
+        log.info("获取解析自定义参数******************************");
         JSONObject input = JSONUtil.parseObj(args[0]);
         if (input.get("url_pre") != null) {
             Constants.setProUrlPre("http://" + (String) input.get("url_pre") + "/");
@@ -56,7 +56,7 @@ public class ProMain {
      * @return
      */
     public static String getSessionId() {
-        log.info("模拟登录获取sessionId---------------------");
+        log.info("模拟登录获取sessionId******************************");
         Map loginMap =  new HashMap<String, Object>();
         loginMap.put("userName", "admin");
         loginMap.put("password","soa@173");//线上密码soa@173,测试开发111111

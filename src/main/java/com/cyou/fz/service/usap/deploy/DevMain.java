@@ -54,7 +54,7 @@ public class DevMain {
      * @return
      */
     public static String getSessionId() {
-        log.info("模拟登录获取sessionId---------------------");
+        log.info("模拟登录获取sessionId******************************");
         Map loginMap =  new HashMap<String, Object>();
         loginMap.put("userName", "admin");
         loginMap.put("password","111111");//线上密码soa@173,测试开发111111
