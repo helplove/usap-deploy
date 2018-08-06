@@ -18,7 +18,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.cyou.fz.service.usap.deploy.DevMain</mainClass>
+                  <mainClass>com.cyou.fz.service.usap.deploy.TestMain</mainClass>
                 </transformer>
               </transformers>
             </configuration>
