@@ -173,111 +173,231 @@ public class Utils {
      * @throws Exception
      */
     public static void execute(JSONObject updateData, JSONObject input, EnvClassEnum envClassEnum, String sessionId, String inf) throws Exception {
-        Map<String, Object> deployMap = new HashMap<String, Object>();
         if (updateData == null) {
-            //执行创建应用
-            deployMap.put("appId", input.get("appId"));
-            deployMap.put("appName", input.get("appName"));
-            deployMap.put("groupId", input.get("groupId")!=null?input.get("groupId"):"com.cyou.fz.services");
-            deployMap.put("artifactId", input.get("artifactId"));
-            deployMap.put("version", input.get("version"));
-            deployMap.put("pkg", input.get("pkg"));
-            deployMap.put("port", input.get("port"));
-            deployMap.put("threadNum", input.get("threadNum"));
-            deployMap.put("serveiceVersion", input.get("serveiceVersion"));
-            deployMap.put("timeout", input.get("timeout"));
-            deployMap.put("lang", input.get("lang"));
-            deployMap.put("phpUrl", input.get("phpUrl"));
-            deployMap.put("inf", inf);
-            deployMap.put("userNames", input.get("userNames"));
-            if (input.get("lang").equals(2)) {
-                SetmvnUrl(updateData, input, deployMap);
-            }
-            HttpRequest updateRequest;
-            if (EnvClassEnum.TEST.equals(envClassEnum)) {
-                updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/saveProject");
-            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
-                updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/saveProject");
-            }else {
-                updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/saveProject");
-            }
-            updateRequest.disableCache();
-            updateRequest.form(deployMap);
-            log.info("创建信息为：{}",deployMap);
-            log.info("开始创建usap服务********************************" + input.get("appId"));
-            updateRequest.cookie("JSESSIONID=" + sessionId);
-            HttpResponse updateResult = updateRequest.execute();
-            JSONObject rs = JSONUtil.parseObj(updateResult.body());
-            while ("未登录".equals(rs.get("msg"))) {
-                if (EnvClassEnum.TEST.equals(envClassEnum)) {
-                    sessionId = TestMain.getSessionId();
-                }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
-                    sessionId = DevMain.getSessionId();
-                }else {
-                    sessionId = ProMain.getSessionId();
-                }
-                rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
-            }
-            log.info(rs.toString());
+            create(updateData, input, envClassEnum, sessionId, inf);
         }else {
-            deployMap.put("id", updateData.get("id"));
-            deployMap.put("appName", input.get("appName").equals("default")?updateData.get("appName"):input.get("appName"));
-            deployMap.put("version", input.get("version").equals("default")?updateData.get("version"):input.get("version"));
-            deployMap.put("port", input.get("port").equals("default")?updateData.get("port"):input.get("port"));
-            deployMap.put("threadNum", input.get("threadNum").equals("default")?updateData.get("threadNum"):input.get("threadNum"));
-            deployMap.put("serveiceVersion", input.get("serveiceVersion").equals("default")?updateData.get("serveiceVersion"):input.get("serveiceVersion"));
-            deployMap.put("timeout", input.get("timeout").equals("default")?updateData.get("timeout"):input.get("timeout"));
-            deployMap.put("phpUrl", input.get("phpUrl").equals("default")?updateData.get("phpUrl"):input.get("phpUrl"));
-            deployMap.put("inf", inf);
-            deployMap.put("userNames", input.get("userNames").equals("default")?updateData.get("userNames"):input.get("userNames"));
-            if (input.get("artifactId") != null) {
-                deployMap.put("artifactId", input.get("artifactId"));
-            }else {
-                deployMap.put("artifactId", updateData.get("artifactId"));
-            }
-            if (input.get("groupId") != null) {
-                deployMap.put("groupId", input.get("groupId"));
-            }else {
-                deployMap.put("groupId", updateData.get("groupId"));
-            }
-            if (input.get("pkg") != null) {
-                deployMap.put("pkg", input.get("pkg"));
-            }else {
-                deployMap.put("pkg", updateData.get("pkg"));
-            }
-            if (input.get("lang").equals(2)) {
-                Utils.SetmvnUrl(updateData, input, deployMap);
-            }
-            HttpRequest updateRequest;
-            if (EnvClassEnum.TEST.equals(envClassEnum)) {
-                updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/upgradeProject");
-            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
-                updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
-            }else {
-                updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/upgradeProject");
-            }
-            updateRequest.disableCache();
-            updateRequest.form(deployMap);
-            updateRequest.cookie("JSESSIONID=" + sessionId);
-            log.info("更新信息为：{}",deployMap);
-            log.info("开始更新usap服务********************************" + input.get("appId"));
-            HttpResponse updateResult = updateRequest.execute();
-            JSONObject rs = JSONUtil.parseObj(updateResult.body());
-            while ("未登录".equals(rs.get("msg"))) {
-                if (EnvClassEnum.TEST.equals(envClassEnum)) {
-                    sessionId = TestMain.getSessionId();
-                }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
-                    sessionId = DevMain.getSessionId();
-                }else {
-                    sessionId = ProMain.getSessionId();
-                }
-                rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
-            }
-            if (!"成功".equals(rs.get("msg"))) {
-                log.info(rs.toString());
-                throw new Exception((String) rs.get("msg"));
-            }
-            log.info(rs.toString());
+            update(updateData, input, envClassEnum, sessionId, inf);
         }
     }
+
+    /**
+     * 执行usap项目的创建
+     * @param updateData
+     * @param input
+     * @param envClassEnum
+     * @param sessionId
+     * @param inf
+     * @throws Exception
+     */
+    public static void create(JSONObject updateData, JSONObject input, EnvClassEnum envClassEnum, String sessionId, String inf) throws Exception {
+        //执行创建应用
+        Map<String, Object> deployMap = new HashMap<String, Object>();
+        deployMap.put("appId", input.get("appId"));
+        deployMap.put("appName", input.get("appName"));
+        deployMap.put("groupId", input.get("groupId")!=null?input.get("groupId"):"com.cyou.fz.services");
+        deployMap.put("artifactId", input.get("artifactId"));
+        deployMap.put("version", input.get("version"));
+        deployMap.put("pkg", input.get("pkg"));
+        deployMap.put("port", input.get("port"));
+        deployMap.put("threadNum", input.get("threadNum"));
+        deployMap.put("serveiceVersion", input.get("serveiceVersion"));
+        deployMap.put("timeout", input.get("timeout"));
+        deployMap.put("lang", input.get("lang"));
+        deployMap.put("phpUrl", input.get("phpUrl"));
+        deployMap.put("inf", inf);
+        deployMap.put("userNames", input.get("userNames"));
+        if (input.get("lang").equals(2)) {
+            SetmvnUrl(updateData, input, deployMap);
+        }
+        HttpRequest updateRequest;
+        if (EnvClassEnum.TEST.equals(envClassEnum)) {
+            updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/saveProject");
+        }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+            updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/saveProject");
+        }else {
+            updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/saveProject");
+        }
+        updateRequest.disableCache();
+        updateRequest.form(deployMap);
+        log.info("创建信息为：{}",deployMap);
+        log.info("开始创建usap服务********************************" + input.get("appId"));
+        updateRequest.cookie("JSESSIONID=" + sessionId);
+        HttpResponse updateResult = updateRequest.execute();
+        JSONObject rs = JSONUtil.parseObj(updateResult.body());
+        while ("未登录".equals(rs.get("msg"))) {
+            if (EnvClassEnum.TEST.equals(envClassEnum)) {
+                sessionId = TestMain.getSessionId();
+            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+                sessionId = DevMain.getSessionId();
+            }else {
+                sessionId = ProMain.getSessionId();
+            }
+            rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
+        }
+        log.info(rs.toString());
+
+        //SOA字典自動化添加该创建项目
+        addDictItem(deployMap, envClassEnum);
+
+    }
+
+    /**
+     * 执行usap项目的更新
+     * @param updateData
+     * @param input
+     * @param envClassEnum
+     * @param sessionId
+     * @param inf
+     * @throws Exception
+     */
+    public static void update(JSONObject updateData, JSONObject input, EnvClassEnum envClassEnum, String sessionId, String inf) throws Exception {
+        Map<String, Object> deployMap = new HashMap<String, Object>();
+        deployMap.put("id", updateData.get("id"));
+        deployMap.put("appName", input.get("appName").equals("default")?updateData.get("appName"):input.get("appName"));
+        deployMap.put("version", input.get("version").equals("default")?updateData.get("version"):input.get("version"));
+        deployMap.put("port", input.get("port").equals("default")?updateData.get("port"):input.get("port"));
+        deployMap.put("threadNum", input.get("threadNum").equals("default")?updateData.get("threadNum"):input.get("threadNum"));
+        deployMap.put("serveiceVersion", input.get("serveiceVersion").equals("default")?updateData.get("serveiceVersion"):input.get("serveiceVersion"));
+        deployMap.put("timeout", input.get("timeout").equals("default")?updateData.get("timeout"):input.get("timeout"));
+        deployMap.put("phpUrl", input.get("phpUrl").equals("default")?updateData.get("phpUrl"):input.get("phpUrl"));
+        deployMap.put("inf", inf);
+        deployMap.put("userNames", input.get("userNames").equals("default")?updateData.get("userNames"):input.get("userNames"));
+        if (input.get("artifactId") != null) {
+            deployMap.put("artifactId", input.get("artifactId"));
+        }else {
+            deployMap.put("artifactId", updateData.get("artifactId"));
+        }
+        if (input.get("groupId") != null) {
+            deployMap.put("groupId", input.get("groupId"));
+        }else {
+            deployMap.put("groupId", updateData.get("groupId"));
+        }
+        if (input.get("pkg") != null) {
+            deployMap.put("pkg", input.get("pkg"));
+        }else {
+            deployMap.put("pkg", updateData.get("pkg"));
+        }
+        if (input.get("lang").equals(2)) {
+            Utils.SetmvnUrl(updateData, input, deployMap);
+        }
+        HttpRequest updateRequest;
+        if (EnvClassEnum.TEST.equals(envClassEnum)) {
+            updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/upgradeProject");
+        }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+            updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
+        }else {
+            updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/upgradeProject");
+        }
+        updateRequest.disableCache();
+        updateRequest.form(deployMap);
+        updateRequest.cookie("JSESSIONID=" + sessionId);
+        log.info("更新信息为：{}",deployMap);
+        log.info("开始更新usap服务********************************" + input.get("appId"));
+        HttpResponse updateResult = updateRequest.execute();
+        JSONObject rs = JSONUtil.parseObj(updateResult.body());
+        while ("未登录".equals(rs.get("msg"))) {
+            if (EnvClassEnum.TEST.equals(envClassEnum)) {
+                sessionId = TestMain.getSessionId();
+            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+                sessionId = DevMain.getSessionId();
+            }else {
+                sessionId = ProMain.getSessionId();
+            }
+            rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
+        }
+        if (!"成功".equals(rs.get("msg"))) {
+            log.info(rs.toString());
+            throw new Exception((String) rs.get("msg"));
+        }
+        log.info(rs.toString());
+    }
+
+
+    /**
+     * SOA字典自動化添加
+     * @param deployMap
+     * @param envClassEnum
+     */
+    public static void addDictItem(Map<String, Object> deployMap, EnvClassEnum envClassEnum) {
+        log.info("开始对字典元素进行自动化创建（文档映射-应用对坐标）********************************");
+        Integer orderNo;
+        Integer dictId = Integer.MIN_VALUE;
+        String sessionId;
+        //获取不同环境的对应字典ID（文档映射-应用对坐标）
+        HttpRequest getdictIdRequest;
+        if (EnvClassEnum.TEST.equals(envClassEnum)) {
+            getdictIdRequest = HttpUtil.createGet(Constants.getTestUrlPre() + "dict/doList?limit=30");
+            sessionId = TestMain.getSessionId();
+        }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+            getdictIdRequest = HttpUtil.createGet(Constants.getDevUrlPre() + "dict/doList?limit=30");
+            sessionId = DevMain.getSessionId();
+        }else {
+            getdictIdRequest = HttpUtil.createGet(Constants.getProUrlPre() + "dict/doList?limit=30");
+            sessionId = ProMain.getSessionId();
+        }
+        getdictIdRequest.cookie("JSESSIONID=" + sessionId);
+        HttpResponse getdictIdResponse = getdictIdRequest.execute();
+        JSONObject getdictIdResult = JSONUtil.parseObj(getdictIdResponse.body());
+        while (getdictIdResult.isNull("data")) {
+            if (EnvClassEnum.TEST.equals(envClassEnum)) {
+                sessionId = TestMain.getSessionId();
+            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+                sessionId = DevMain.getSessionId();
+            }else {
+                sessionId = ProMain.getSessionId();
+            }
+            getdictIdResult = JSONUtil.parseObj(getdictIdRequest.cookie("JSESSIONID=" + sessionId).execute().body());
+        }
+        JSONArray array = (JSONArray) getdictIdResult.get("data");
+        for (JSONObject object : array.toList(JSONObject.class)) {
+            if ("DOC_APPID_ARTIFACTID".equals(object.get("dictcode"))) {
+                dictId = (Integer) object.get("dictid");
+                break;
+            }
+        }
+
+        //获取要创建的字典元素orderNo
+        HttpRequest getOrderNoRequest;
+        if (EnvClassEnum.TEST.equals(envClassEnum)) {
+            getOrderNoRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "dictItem/doList?dictId=" + dictId);
+        }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+            getOrderNoRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "dictItem/doList?dictId=" + dictId);
+        }else {
+            getOrderNoRequest = HttpUtil.createPost(Constants.getProUrlPre() + "dictItem/doList?dictId=" + dictId);
+        }
+        getOrderNoRequest.cookie("JSESSIONID=" + sessionId);
+        HttpResponse getOrderNoResponse = getOrderNoRequest.execute();
+        JSONObject getOrderNoResult = JSONUtil.parseObj(getOrderNoResponse.body());
+        orderNo = ((Integer) getOrderNoResult.get("total")) + 1;
+
+        //执行创建字典元素操作
+        HttpRequest request;
+        if (EnvClassEnum.TEST.equals(envClassEnum)) {
+            request = HttpUtil.createPost((Constants.getTestUrlPre() + "dictItem/doSave"));
+        }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+            request = HttpUtil.createPost((Constants.getDevUrlPre() + "dictItem/doSave"));
+        }else {
+            request = HttpUtil.createPost((Constants.getProUrlPre() + "dictItem/doSave"));
+        }
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("dictId", dictId);
+        map.put("dictName", "文档映射-应用对坐标");
+        map.put("itemName", deployMap.get("appName"));
+        map.put("itemCode", deployMap.get("appId"));
+        map.put("itemVal", deployMap.get("appId"));
+        map.put("itemValExt", "");
+        map.put("orderNo", orderNo);
+        map.put("remark", "");
+        request.form(map);
+        request.cookie("JSESSIONID=" + sessionId);
+        HttpResponse response = request.execute();
+        JSONObject resultJson = JSONUtil.parseObj(response.body());
+        log.info(resultJson.toString());
+        if (Boolean.FALSE.equals(resultJson.get("rs"))) {
+            log.info("创建字典元素失败");
+        }else {
+            log.info("创建字典元素成功");
+        }
+    }
+
 }
