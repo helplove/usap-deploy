@@ -30,7 +30,7 @@ public class Utils {
      * @param deployMap
      * @return
      */
-    public static Map<String, Object> SetmvnUrl(Map<String, Object> updateData, Map<String, Object> input, Map<String, Object> deployMap) throws Exception {
+    public static void SetmvnUrl(Map<String, Object> updateData, Map<String, Object> input, Map<String, Object> deployMap) throws Exception {
         log.info("开始根据您填入的GAV坐标信息从Maven中获取jar包信息填入发布参数********************************");
         try {
             //maven仓库
@@ -63,10 +63,9 @@ public class Utils {
             deployMap.put("mavenJarUrl", jarDeployUrl);
             deployMap.put("mavenJavaSourceUrl", jarSourceDeployUrl);
             deployMap.put("mavenJavaDocUrl", jarDocDeployUrl);
-            return deployMap;
         }catch (Exception e) {
             //log.info("获取maven仓库的url地址并填入发布信息失败，请检查maven库中是否已存在JAR包或者您填入的GAV坐标是否与maven库中一致");
-            throw new Exception("获取maven仓库的url地址并填入发布信息失败，请检查maven库中是否已存在JAR包或者您填入的GAV坐标是否与maven库中一致" + e);
+            throw new Exception("请检查maven库中是否已存在JAR包或者您填入的GAV坐标是否与maven库中一致" + e);
         }
     }
 
@@ -192,9 +191,16 @@ public class Utils {
             deployMap.put("inf", inf);
             deployMap.put("userNames", input.get("userNames"));
             if (input.get("lang").equals(2)) {
-                deployMap = SetmvnUrl(updateData, input, deployMap);
+                SetmvnUrl(updateData, input, deployMap);
             }
-            HttpRequest updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/saveProject");
+            HttpRequest updateRequest;
+            if (EnvClassEnum.TEST.equals(envClassEnum)) {
+                updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/saveProject");
+            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+                updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/saveProject");
+            }else {
+                updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/saveProject");
+            }
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             log.info("创建信息为：{}",deployMap);
@@ -240,9 +246,16 @@ public class Utils {
                 deployMap.put("pkg", updateData.get("pkg"));
             }
             if (input.get("lang").equals(2)) {
-                deployMap = Utils.SetmvnUrl(updateData, input, deployMap);
+                Utils.SetmvnUrl(updateData, input, deployMap);
             }
-            HttpRequest updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
+            HttpRequest updateRequest;
+            if (EnvClassEnum.TEST.equals(envClassEnum)) {
+                updateRequest = HttpUtil.createPost(Constants.getTestUrlPre() + "shtml/project/upgradeProject");
+            }else if (EnvClassEnum.DEV.equals(envClassEnum)) {
+                updateRequest = HttpUtil.createPost(Constants.getDevUrlPre() + "shtml/project/upgradeProject");
+            }else {
+                updateRequest = HttpUtil.createPost(Constants.getProUrlPre() + "shtml/project/upgradeProject");
+            }
             updateRequest.disableCache();
             updateRequest.form(deployMap);
             updateRequest.cookie("JSESSIONID=" + sessionId);
@@ -261,6 +274,7 @@ public class Utils {
                 rs = JSONUtil.parseObj(updateRequest.cookie("JSESSIONID=" + sessionId).execute().body());
             }
             if (!"成功".equals(rs.get("msg"))) {
+                log.info(rs.toString());
                 throw new Exception((String) rs.get("msg"));
             }
             log.info(rs.toString());
