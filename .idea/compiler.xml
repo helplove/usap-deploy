@@ -11,10 +11,6 @@
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
       <module name="deploy" target="1.5" />
-      <module name="manager" target="1.7" />
-      <module name="manager-common" target="1.7" />
-      <module name="manager-service" target="1.7" />
-      <module name="manager-web" target="1.6" />
     </bytecodeTargetLevel>
   </component>
 </project>
